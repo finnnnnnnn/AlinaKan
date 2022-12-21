@@ -1,4 +1,14 @@
-def encrypt_vigenere(plaintext: str, keyword: str) -> str:
+from caesar import encrypt_caesar
+from caesar import decrypt_caesar
+
+def keyword_lenght(keyword, word):
+    if len(word) > len(keyword):
+        for i in range(len(word)):
+            keyword += keyword[i]
+    return keyword.upper()
+
+
+def encrypt_vigenere(word, keyword):
     """
     Encrypts plaintext using a Vigenere cipher.
 
@@ -10,11 +20,15 @@ def encrypt_vigenere(plaintext: str, keyword: str) -> str:
     'LXFOPVEFRNHR'
     """
     ciphertext = ""
-    # PUT YOUR CODE HERE
+    keyword = keyword_lenght(keyword, word)
+    for i in range(len(word)):
+        ch = word[i]
+        shift = ord(keyword[i]) - ord('A')
+        ciphertext += encrypt_caesar(ch, shift)
     return ciphertext
 
 
-def decrypt_vigenere(ciphertext: str, keyword: str) -> str:
+def decrypt_vigenere(word, keyword):
     """
     Decrypts a ciphertext using a Vigenere cipher.
 
@@ -26,5 +40,9 @@ def decrypt_vigenere(ciphertext: str, keyword: str) -> str:
     'ATTACKATDAWN'
     """
     plaintext = ""
-    # PUT YOUR CODE HERE
+    keyword = keyword_lenght(keyword, word)
+    for i in range(len(word)):
+        ch = word[i]
+        shift = ord(keyword[i]) - ord('A')
+        plaintext += decrypt_caesar(ch, shift)
     return plaintext

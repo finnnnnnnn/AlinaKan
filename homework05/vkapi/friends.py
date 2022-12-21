@@ -3,7 +3,9 @@ import math
 import time
 import typing as tp
 
+import requests
 from vkapi import config, session
+from vkapi.config import VK_CONFIG
 from vkapi.exceptions import APIError
 
 QueryParams = tp.Optional[tp.Dict[str, tp.Union[str, int]]]
@@ -16,7 +18,7 @@ class FriendsResponse:
 
 
 def get_friends(
-    user_id: int, count: int = 5000, offset: int = 0, fields: tp.Optional[tp.List[str]] = None
+    user_id: int, count: int = 5000, offset: int = 0, fields: tp.Optional[tp.List[str]] = None,
 ) -> FriendsResponse:
     """
     Получить список идентификаторов друзей пользователя или расширенную информацию
@@ -28,7 +30,17 @@ def get_friends(
     :param fields: Список полей, которые нужно получить для каждого пользователя.
     :return: Список идентификаторов друзей пользователя или список пользователей.
     """
-    pass
+
+    domain = VK_CONFIG["domain"]
+    accesstoken = VK_CONFIG["access_token"]
+    vers = VK_CONFIG["version"]
+
+    query = (
+        f"{domain}/friends.get?access_token={accesstoken}&user_id={user_id}&fields={fields}&v={vers}"
+    )
+    response = requests.get(query).json()["response"]
+
+    return FriendsResponse(count=response["count"], items=response["items"])
 
 
 class MutualFriends(tp.TypedDict):
@@ -57,4 +69,33 @@ def get_mutual(
     :param offset: Смещение, необходимое для выборки определенного подмножества общих друзей.
     :param progress: Callback для отображения прогресса.
     """
-    pass
+
+    domain = VK_CONFIG["domain"]
+    accesstoken = VK_CONFIG["access_token"]
+    vers = VK_CONFIG["version"]
+    mut = []
+
+    if target_uids is None:
+        a = 1
+    else:
+        a = math.ceil(len(target_uids) / 100)
+    for i in range(a):
+        get = requests.get(
+            f"{domain}/friends.getMutual",
+            params={
+                "access_token": accesstoken,
+                "source_uid": source_uid,
+                "target_uid": target_uid,
+                "target_uids": target_uids,
+                "order": order,
+                "count": count,
+                "offset": i * 100,
+                "progress": progress,
+                "v": vers,
+            },
+        ).json()["response"]
+        response = get
+        mut += response
+        time.sleep(0.33)
+
+    return mut

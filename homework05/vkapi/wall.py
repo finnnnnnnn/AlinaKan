@@ -5,8 +5,8 @@ from string import Template
 
 import pandas as pd
 from pandas import json_normalize
-
-from vkapi import config, session
+from vkapi import session
+from vkapi.config import VK_CONFIG
 from vkapi.exceptions import APIError
 
 
@@ -20,7 +20,28 @@ def get_posts_2500(
     extended: int = 0,
     fields: tp.Optional[tp.List[str]] = None,
 ) -> tp.Dict[str, tp.Any]:
-    pass
+    code = """return API.wall.get({
+                    '"owner_id": "owner_id"',
+                    '"domain": "domain"',
+                    '"offset": offset',
+                    '"count": "1"',
+                    '"filter": "filter"',
+                    '"extended": extended',
+                    '"fields": "fields"',
+                    '"v": "v"'
+                    });"""
+
+    request_data = {
+        "access_token": VK_CONFIG["access_token"],
+        "v": VK_CONFIG["version"],
+        "code": code,
+    }
+    post = session.post(
+        "execute",
+        **request_data,
+    )
+
+    return post.json()["response"]["items"]
 
 
 def get_wall_execute(
@@ -49,4 +70,11 @@ def get_wall_execute(
     :param fields: Список дополнительных полей для профилей и сообществ, которые необходимо вернуть.
     :param progress: Callback для отображения прогресса.
     """
-    pass
+    response: tp.List[str] = []
+    while count > 0:
+        pst = get_posts_2500(owner_id, domain, offset, min(count, max_count), max_count, filter, extended, fields)
+        offset += min(count, max_count)
+        count -= max_count
+        response += pst
+        time.sleep(1)
+    return json_normalize(response)
